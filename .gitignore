@@ -1,0 +1,11 @@
+**/target/
+.local/
+.env
+.env.*
+!.env.example
+*.log
+AGENTS.md
+PROGRESS.md
+docs/implementation-plan.md
+.rules/*
+tools/*
