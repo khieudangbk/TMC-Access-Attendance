@@ -1,0 +1,31 @@
+# ==============================================================================
+# ACCESS & ATTENDANCE EVENT SERVICE - SU KIEN RA/VAO
+# Phan phoi boi Config Server; gia tri moi truong nam trong .env rieng cua service.
+# ==============================================================================
+
+# 1. Application port
+server:
+  port: ${ACCESS_EVENT_PORT:8084}
+
+spring:
+  # 2. PostgreSQL - host, port, database, user va password tu .env
+  datasource:
+    url: ${ACCESS_EVENT_DB_URL:jdbc:postgresql://${ACCESS_EVENT_DB_HOST:localhost}:${ACCESS_EVENT_DB_PORT:5432}/${ACCESS_EVENT_DB_NAME:access_event_db}}
+    driver-class-name: org.postgresql.Driver
+    username: ${ACCESS_EVENT_DB_USER:${ACCESS_EVENT_DB_USERNAME:access_event_app}}
+    password: ${ACCESS_EVENT_DB_PASSWORD:local-db-password}
+
+tmc:
+  outbox:
+    enabled: ${OUTBOX_ENABLED:${EVENTS_ENABLED:false}}
+  events:
+    enabled: ${EVENTS_ENABLED:false}
+  internal:
+    enabled: ${INTERNAL_APIS_ENABLED:false}
+    token-uri: ${IDENTITY_TOKEN_URI:http://localhost:8081/oauth2/token}
+    identity-url: ${IDENTITY_API_URL:http://localhost:8081}
+    client-id: ${INTERNAL_CLIENT_ID:}
+    client-secret: ${INTERNAL_CLIENT_SECRET:}
+    station-url: ${STATION_API_URL:http://localhost:8083}
+    qr-url: ${QR_API_URL:http://localhost:8082}
+    scopes: identity.verify qr.verify stations.verify

@@ -1,0 +1,45 @@
+# ==============================================================================
+# API GATEWAY CONFIGURATION - ROUTING, JWT VA CORS
+# Phan phoi boi Config Server; gia tri moi truong nam trong .env rieng cua service.
+# ==============================================================================
+
+# 1. Application port
+server:
+  port: ${API_GATEWAY_PORT:8080}
+
+# 2. CORS - frontend origins duoc phep
+tmc:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+
+# 3. Gateway MVC routes - tra cuu instance bang ten Eureka
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: identity-user-service
+              uri: lb://identity-user-service
+              predicates:
+                - Path=/api/identity/**
+              filters:
+                - StripPrefix=2
+            - id: qr-service
+              uri: lb://qr-service
+              predicates:
+                - Path=/api/qr/**
+              filters:
+                - StripPrefix=2
+            - id: gate-station-service
+              uri: lb://gate-station-service
+              predicates:
+                - Path=/api/stations/**
+              filters:
+                - StripPrefix=2
+            - id: access-event-service
+              uri: lb://access-event-service
+              predicates:
+                - Path=/api/access/**
+              filters:
+                - StripPrefix=2

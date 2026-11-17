@@ -1,0 +1,75 @@
+# ==============================================================================
+# TMC-AACS - CAU HINH DUNG CHUNG CHO CAC SERVICE
+# Phan phoi boi Config Server; gia tri moi truong nam trong .env rieng cua service.
+# ==============================================================================
+
+# 1. RabbitMQ - publisher confirms va consumer acknowledgement
+spring:
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:tmc}
+    password: ${RABBITMQ_PASSWORD:local-rabbit-password}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST:/}
+    connection-timeout: 10s
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+        default-requeue-rejected: false
+        prefetch: 20
+  # 2. SQL persistence - chi ap dung cho cac service co JPA/Flyway
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 10000
+      validation-timeout: 5000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+  # 3. JWT verification - chi dung public key qua JWKS
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${IDENTITY_ISSUER:http://localhost:8081}
+          jwk-set-uri: ${IDENTITY_JWK_SET_URI:http://localhost:8081/oauth2/jwks}
+
+# 4. Service registration va discovery
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://discovery-client:local-discovery-password@localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}
+
+# 5. Actuator va health probes
+management:
+  health:
+    rabbit:
+      enabled: ${OUTBOX_ENABLED:${EVENTS_ENABLED:false}}
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+
+# 6. Graceful shutdown
+server:
+  shutdown: graceful
