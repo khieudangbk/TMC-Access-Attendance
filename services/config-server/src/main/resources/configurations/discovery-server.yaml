@@ -1,0 +1,23 @@
+# ==============================================================================
+# DISCOVERY SERVER CONFIGURATION - EUREKA
+# Phan phoi boi Config Server; gia tri moi truong nam trong .env rieng cua service.
+# ==============================================================================
+
+# 1. Application port
+server:
+  port: ${DISCOVERY_SERVER_PORT:8761}
+
+# 2. HTTP Basic cho registry
+spring:
+  security:
+    user:
+      name: ${EUREKA_USERNAME:discovery-client}
+      password: ${EUREKA_PASSWORD:local-discovery-password}
+
+# 3. Standalone registry local
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+  instance:
+    hostname: ${EUREKA_HOSTNAME:localhost}

@@ -1,0 +1,13 @@
+# ==============================================================================
+# DISCOVERY-SERVER - APPLICATION BOOTSTRAP
+# Nguon cau hinh: .env rieng -> config-client.yaml -> Config Server.
+# ==============================================================================
+
+spring:
+  application:
+    name: discovery-server
+  config:
+    import:
+      - "optional:file:./.env[.properties]"
+      - "optional:file:./services/discovery-server/.env[.properties]"
+      - "classpath:config-client.yaml"

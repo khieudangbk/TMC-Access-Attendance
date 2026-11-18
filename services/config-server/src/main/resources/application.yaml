@@ -1,0 +1,34 @@
+# ==============================================================================
+# CONFIG SERVER - NATIVE CONFIGURATION REPOSITORY
+# ==============================================================================
+
+spring:
+  application:
+    name: config-server
+  config:
+    import:
+      - "optional:file:./.env[.properties]"
+      - "optional:file:./services/config-server/.env[.properties]"
+  profiles:
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: "${CONFIG_REPOSITORY:classpath:/configurations/}"
+  security:
+    user:
+      name: "${CONFIG_SERVER_USERNAME:config-client}"
+      password: "${CONFIG_SERVER_PASSWORD:local-config-password}"
+
+server:
+  port: ${CONFIG_SERVER_PORT:8888}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized

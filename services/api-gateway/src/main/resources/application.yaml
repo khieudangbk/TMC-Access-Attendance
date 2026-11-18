@@ -1,0 +1,13 @@
+# ==============================================================================
+# API-GATEWAY - APPLICATION BOOTSTRAP
+# Nguon cau hinh: .env rieng -> config-client.yaml -> Config Server.
+# ==============================================================================
+
+spring:
+  application:
+    name: api-gateway
+  config:
+    import:
+      - "optional:file:./.env[.properties]"
+      - "optional:file:./services/api-gateway/.env[.properties]"
+      - "classpath:config-client.yaml"
