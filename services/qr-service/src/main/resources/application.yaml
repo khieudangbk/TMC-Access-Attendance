@@ -1,0 +1,13 @@
+# ==============================================================================
+# QR-SERVICE - APPLICATION BOOTSTRAP
+# Nguon cau hinh: .env rieng -> config-client.yaml -> Config Server.
+# ==============================================================================
+
+spring:
+  application:
+    name: qr-service
+  config:
+    import:
+      - "optional:file:./.env[.properties]"
+      - "optional:file:./services/qr-service/.env[.properties]"
+      - "classpath:config-client.yaml"
