@@ -1,0 +1,21 @@
+FROM maven:3.9-eclipse-temurin-21-alpine AS builder
+WORKDIR /app
+
+# Copy pom files for dependency caching
+COPY pom.xml ./
+COPY central-api/pom.xml central-api/
+COPY edge-agent/pom.xml edge-agent/
+
+# Download dependencies
+RUN mvn -B -ntp dependency:go-offline -pl edge-agent -am
+
+# Copy source and build
+COPY edge-agent/src edge-agent/src
+RUN mvn -B -ntp clean package -pl edge-agent -am -DskipTests
+
+# Runtime image
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=builder /app/edge-agent/target/edge-agent-*.jar app.jar
+EXPOSE 8081
+ENTRYPOINT ["java", "-jar", "app.jar"]

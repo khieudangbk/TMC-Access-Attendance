@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: tmc-aacs-edge
+  datasource:
+    url: ${EDGE_DB_URL:jdbc:postgresql://localhost:5432/tmc_edge}
+    username: ${DB_USER:tmc}
+    password: ${DB_PASSWORD:tmc_dev_password}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  flyway:
+    locations: classpath:db/migration
+    validate-migration-naming: true
+
+server:
+  port: ${EDGE_SERVER_PORT:8081}
+  shutdown: graceful
+
+app:
+  environment: ${APP_ENV:local}
+  factory-id: ${FACTORY_ID:TMC-BD}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId:-}] %logger{40} - %msg%n"

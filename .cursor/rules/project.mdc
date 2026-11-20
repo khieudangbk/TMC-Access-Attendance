@@ -1,0 +1,26 @@
+---
+description: TMC-AACS repository rules for AI-assisted changes
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# TMC-AACS
+
+Read `AGENTS.md` first. It contains the domain invariants, stack, commands, testing gates and
+definition of done. Then read `docs/README.md` and the task-specific docs from
+`docs/08-agents/agent-context.md`.
+
+Critical invariants (full list in `AGENTS.md` §3):
+
+- Persist access event + decision + gate intent + outbox **before** commanding the turnstile.
+- `scan_id` / `command_id` / `event_id` / `batch_id` are stable and idempotent.
+- Turnstile timeout is `UNKNOWN`, never success/failure; never blindly retry.
+- Evidence and audit are append-only; corrections are adjustment records.
+- QR is server-signed, ~60s TTL, no direct PII, no secrets in clients.
+- RBAC + data scope are enforced server-side.
+- The scan path never calls HR, reporting, admin or the central DB synchronously.
+- One service owns one PostgreSQL schema; no cross-schema joins/writes.
+- Bounded offline authorization (target 30 minutes); fail secure after expiry.
+
+Before coding: identify the requirement/ADR, read the relevant docs, keep the diff focused.
+After coding: run `make verify`, update docs/OpenAPI/ADR, report tests and risks.

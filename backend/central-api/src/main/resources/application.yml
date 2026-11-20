@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: tmc-aacs-central
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/tmc_central}
+    username: ${DB_USER:tmc}
+    password: ${DB_PASSWORD:tmc_dev_password}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  flyway:
+    locations: classpath:db/migration
+    validate-migration-naming: true
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+
+info:
+  app:
+    version: '@project.version@'
+
+app:
+  environment: ${APP_ENV:local}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,modulith
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId:-}] %logger{40} - %msg%n"

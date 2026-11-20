@@ -1,0 +1,38 @@
+# Build output
+target/
+dist/
+build/
+out/
+
+# Java
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+*.log
+
+# Node
+node_modules/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.jks
+*.key
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+skills/
+
+# Local data
+data/
+*.pid

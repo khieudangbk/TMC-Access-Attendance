@@ -1,0 +1,937 @@
+openapi: 3.1.0
+info:
+  title: TMC-AACS API
+  version: 0.1.0
+  description: |
+    Hợp đồng API cho TMC Access & Attendance Control System.
+
+    Trạng thái từng operation được ghi bằng `x-status`:
+    - `implemented`: có trong code hiện tại.
+    - `planned`: thiết kế đích, chưa implement; không được coi là khả dụng.
+
+    Base path: `/api/v1` cho API công khai/nội bộ người dùng.
+    API nội bộ edge–central dùng `/internal/v1` và mTLS.
+servers:
+  - url: http://localhost:8080
+    description: Local central API
+tags:
+  - name: System
+  - name: Stations
+  - name: Identity
+  - name: Credentials
+  - name: Scans
+  - name: Attendance
+  - name: Reports
+  - name: Exports
+  - name: Admin
+  - name: Internal
+
+paths:
+  /api/v1/system/status:
+    get:
+      tags: [System]
+      operationId: getSystemStatus
+      summary: Trạng thái ứng dụng và database
+      x-status: implemented
+      security: []
+      responses:
+        "200":
+          description: Trạng thái hiện tại
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemStatus"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/v1/stations:
+    get:
+      tags: [Stations]
+      operationId: listStations
+      summary: Danh sách trạm cổng
+      x-status: implemented
+      parameters:
+        - $ref: "#/components/parameters/FactoryIdQuery"
+        - $ref: "#/components/parameters/StationStatusQuery"
+      responses:
+        "200":
+          description: Danh sách trạm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StationListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Stations]
+      operationId: createStation
+      summary: Tạo trạm cổng
+      x-status: planned
+      x-permission: station:system:configure
+      x-scope: system
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StationCreateRequest"
+      responses:
+        "201":
+          description: Đã tạo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Station"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/stations/{stationId}:
+    get:
+      tags: [Stations]
+      operationId: getStation
+      summary: Chi tiết trạm
+      x-status: implemented
+      parameters:
+        - $ref: "#/components/parameters/StationIdPath"
+      responses:
+        "200":
+          description: Trạm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Station"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Stations]
+      operationId: updateStation
+      summary: Cập nhật cấu hình trạm (tăng config_revision)
+      x-status: planned
+      x-permission: station:system:configure
+      x-scope: system
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/StationIdPath"
+        - $ref: "#/components/parameters/IfMatchRevision"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StationUpdateRequest"
+      responses:
+        "200":
+          description: Đã cập nhật
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Station"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/employees:
+    get:
+      tags: [Identity]
+      operationId: listEmployees
+      summary: Danh sách nhân viên theo scope
+      x-status: planned
+      x-permission: employee:factory:read
+      x-scope: factory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/FactoryIdQuery"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Danh sách nhân viên
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeListResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/employees/{employeeRef}:
+    get:
+      tags: [Identity]
+      operationId: getEmployee
+      summary: Chi tiết nhân viên
+      x-status: planned
+      x-permission: employee:factory:read
+      x-scope: factory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/EmployeeRefPath"
+      responses:
+        "200":
+          description: Nhân viên
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/credentials/{employeeRef}/qr:
+    post:
+      tags: [Credentials]
+      operationId: issueQrCredential
+      summary: Cấp QR token ngắn hạn cho nhân viên
+      description: |
+        Trả token đã ký với TTL ngắn. Không trả private key, không trả PII.
+        Cùng `Idempotency-Key` trả cùng kết quả trong cửa sổ cấu hình.
+      x-status: planned
+      x-permission: credential:factory:issue
+      x-scope: factory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/EmployeeRefPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "201":
+          description: Token đã cấp
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QrCredential"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /api/v1/credentials/{employeeRef}/revoke:
+    post:
+      tags: [Credentials]
+      operationId: revokeCredential
+      summary: Thu hồi credential
+      x-status: planned
+      x-permission: credential:factory:revoke
+      x-scope: factory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/EmployeeRefPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  minLength: 3
+                  maxLength: 500
+      responses:
+        "202":
+          description: Đã ghi nhận thu hồi
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/scans:
+    post:
+      tags: [Scans]
+      operationId: submitScan
+      summary: Gửi lượt quét từ kiosk tới edge
+      description: |
+        Chạy trên **edge agent**, không phải central. `scan_id` do kiosk tạo và giữ nguyên khi retry.
+        Cùng `scan_id` + payload khác bị từ chối. Timeout cổng trả `UNKNOWN`.
+      x-status: planned
+      x-permission: scan:station:submit
+      x-scope: station
+      security:
+        - kioskMtls: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanRequest"
+      responses:
+        "200":
+          description: Kết quả đã lưu (bao gồm retry)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Cùng scan_id nhưng payload khác
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/v1/me/attendance:
+    get:
+      tags: [Attendance]
+      operationId: getMyAttendance
+      summary: Lịch sử vào/ra của bản thân
+      x-status: planned
+      x-permission: attendance:self:read
+      x-scope: self
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/FromQuery"
+        - $ref: "#/components/parameters/ToQuery"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Lịch sử
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceEventPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/attendance/monthly:
+    get:
+      tags: [Reports]
+      operationId: getMonthlyAttendance
+      summary: Báo cáo chấm công tháng
+      x-status: planned
+      x-permission: attendance:factory:read
+      x-scope: factory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/YearQuery"
+        - $ref: "#/components/parameters/MonthQuery"
+        - $ref: "#/components/parameters/FactoryIdQuery"
+      responses:
+        "200":
+          description: Báo cáo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonthlyAttendanceReport"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/attendance/adjustments:
+    post:
+      tags: [Attendance]
+      operationId: createAdjustment
+      summary: Đề xuất điều chỉnh chấm công
+      x-status: planned
+      x-permission: adjustment:factory:propose
+      x-scope: factory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustmentRequest"
+      responses:
+        "201":
+          description: Đã tạo đề xuất
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Adjustment"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /api/v1/reports/snapshots:
+    post:
+      tags: [Reports]
+      operationId: createSnapshot
+      summary: Chốt snapshot kỳ báo cáo
+      x-status: planned
+      x-permission: export:factory:run
+      x-scope: factory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [year, month, factoryId]
+              properties:
+                year: { type: integer, minimum: 2020 }
+                month: { type: integer, minimum: 1, maximum: 12 }
+                factoryId: { type: string }
+      responses:
+        "201":
+          description: Snapshot đã tạo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceSnapshot"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/exports/hr:
+    post:
+      tags: [Exports]
+      operationId: exportToHr
+      summary: Gửi lô chấm công sang HR/Payroll
+      x-status: planned
+      x-permission: export:factory:run
+      x-scope: factory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [snapshotId]
+              properties:
+                snapshotId: { type: string }
+      responses:
+        "202":
+          description: Lô đã nhận xử lý
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HrExportBatch"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/audit:
+    get:
+      tags: [Admin]
+      operationId: searchAudit
+      summary: Tra cứu audit log
+      x-status: planned
+      x-permission: audit:system:read
+      x-scope: system
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/FromQuery"
+        - $ref: "#/components/parameters/ToQuery"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: actor
+          in: query
+          schema: { type: string }
+        - name: action
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Trang audit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditPage"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /internal/v1/event-batches:
+    post:
+      tags: [Internal]
+      operationId: ingestEventBatch
+      summary: Nhận lô sự kiện từ edge
+      x-status: planned
+      security:
+        - edgeMtls: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventBatch"
+      responses:
+        "202":
+          description: Kết quả theo item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventBatchResult"
+        "429":
+          description: Quá tải
+          headers:
+            Retry-After:
+              schema: { type: integer }
+
+  /internal/v1/policy-snapshots/current:
+    get:
+      tags: [Internal]
+      operationId: getCurrentPolicySnapshot
+      summary: Snapshot policy/khóa hiện hành cho edge
+      x-status: planned
+      security:
+        - edgeMtls: []
+      responses:
+        "200":
+          description: Snapshot đã ký
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicySnapshot"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    kioskMtls:
+      type: mutualTLS
+    edgeMtls:
+      type: mutualTLS
+
+  parameters:
+    StationIdPath:
+      name: stationId
+      in: path
+      required: true
+      schema: { type: string }
+    EmployeeRefPath:
+      name: employeeRef
+      in: path
+      required: true
+      schema: { type: string }
+    FactoryIdQuery:
+      name: factoryId
+      in: query
+      schema: { type: string }
+    StationStatusQuery:
+      name: status
+      in: query
+      schema:
+        type: string
+        enum: [ACTIVE, INACTIVE, MAINTENANCE]
+    FromQuery:
+      name: from
+      in: query
+      schema: { type: string, format: date-time }
+    ToQuery:
+      name: to
+      in: query
+      schema: { type: string, format: date-time }
+    YearQuery:
+      name: year
+      in: query
+      required: true
+      schema: { type: integer, minimum: 2020 }
+    MonthQuery:
+      name: month
+      in: query
+      required: true
+      schema: { type: integer, minimum: 1, maximum: 12 }
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 8, maxLength: 128 }
+    IfMatchRevision:
+      name: If-Match
+      in: header
+      required: true
+      description: Config revision hiện tại (optimistic concurrency)
+      schema: { type: integer, minimum: 1 }
+
+  responses:
+    BadRequest:
+      description: Payload không hợp lệ
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    Unauthorized:
+      description: Chưa xác thực
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    Forbidden:
+      description: Không đủ quyền hoặc sai scope
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    NotFound:
+      description: Không tồn tại
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    Conflict:
+      description: Xung đột idempotency/trạng thái
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    Unprocessable:
+      description: Vi phạm quy tắc nghiệp vụ
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    ServiceUnavailable:
+      description: Phụ thuộc không sẵn sàng
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+
+  schemas:
+    ApiError:
+      type: object
+      required: [code, message, details, timestamp]
+      properties:
+        code: { type: string, examples: [STATION_NOT_FOUND] }
+        message: { type: string }
+        details:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: { type: string }
+              message: { type: string }
+        timestamp: { type: string, format: date-time }
+
+    SystemStatus:
+      type: object
+      required: [application, version, environment, serverTime, database]
+      properties:
+        application: { type: string, examples: [tmc-aacs-central] }
+        version: { type: string, examples: [0.1.0-SNAPSHOT] }
+        environment: { type: string, examples: [local] }
+        serverTime: { type: string, format: date-time }
+        database:
+          type: string
+          enum: [UP, DOWN]
+
+    Station:
+      type: object
+      required:
+        [stationId, factoryId, factoryName, name, direction, gateId, kioskId, status, configRevision]
+      properties:
+        stationId: { type: string, examples: [BD-IN-01] }
+        factoryId: { type: string, examples: [TMC-BD] }
+        factoryName: { type: string, examples: [Nhà máy Bình Dương] }
+        name: { type: string, examples: [Cổng vào 1] }
+        direction:
+          type: string
+          enum: [IN, OUT]
+        gateId: { type: string, examples: [BD-TS-01] }
+        kioskId: { type: string, examples: [BD-KSK-01] }
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, MAINTENANCE]
+        configRevision: { type: integer, minimum: 1 }
+
+    StationListResponse:
+      type: object
+      required: [items, total, generatedAt]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Station" }
+        total: { type: integer }
+        generatedAt: { type: string, format: date-time }
+
+    StationCreateRequest:
+      type: object
+      required: [stationId, factoryId, name, direction, gateId, kioskId]
+      properties:
+        stationId: { type: string }
+        factoryId: { type: string }
+        name: { type: string }
+        direction:
+          type: string
+          enum: [IN, OUT]
+        gateId: { type: string }
+        kioskId: { type: string }
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, MAINTENANCE]
+          default: ACTIVE
+
+    StationUpdateRequest:
+      type: object
+      properties:
+        name: { type: string }
+        direction:
+          type: string
+          enum: [IN, OUT]
+        gateId: { type: string }
+        kioskId: { type: string }
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, MAINTENANCE]
+        reason: { type: string }
+
+    Employee:
+      type: object
+      required: [employeeRef, status, factoryIds]
+      properties:
+        employeeRef: { type: string }
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, SUSPENDED]
+        factoryIds:
+          type: array
+          items: { type: string }
+        teamId: { type: string }
+        displayName:
+          type: string
+          description: Chỉ trả khi principal có quyền xem PII
+
+    EmployeeListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Employee" }
+        nextCursor: { type: string, nullable: true }
+
+    QrCredential:
+      type: object
+      required: [credentialId, token, issuedAt, expiresAt, keyId]
+      properties:
+        credentialId: { type: string }
+        token:
+          type: string
+          description: Token đã ký, TTL ngắn. Không log giá trị này.
+        issuedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        keyId: { type: string }
+
+    ScanRequest:
+      type: object
+      required: [scanId, stationId, direction, token, occurredAt]
+      properties:
+        scanId:
+          type: string
+          description: Kiosk tạo; giữ nguyên khi retry.
+        stationId: { type: string }
+        direction:
+          type: string
+          enum: [IN, OUT]
+        token: { type: string }
+        occurredAt: { type: string, format: date-time }
+
+    ScanResult:
+      type: object
+      required: [scanId, status, decidedAt]
+      properties:
+        scanId: { type: string }
+        status:
+          type: string
+          enum:
+            [RECEIVED, DENIED, AUTHORIZED, INTENT_COMMITTED, COMMAND_SENT, CONFIRMED, REJECTED, FAILED, UNKNOWN, RECONCILIATION]
+        reasonCode: { type: string, nullable: true }
+        commandId: { type: string, nullable: true }
+        decidedAt: { type: string, format: date-time }
+
+    AttendanceEvent:
+      type: object
+      required: [eventId, scanId, stationId, direction, occurredAt, decision]
+      properties:
+        eventId: { type: string }
+        scanId: { type: string }
+        stationId: { type: string }
+        direction:
+          type: string
+          enum: [IN, OUT]
+        occurredAt: { type: string, format: date-time }
+        decision:
+          type: string
+          enum: [ALLOWED, DENIED]
+        outcome:
+          type: string
+          enum: [CONFIRMED, REJECTED, FAILED, UNKNOWN]
+          nullable: true
+        reasonCode: { type: string, nullable: true }
+
+    AttendanceEventPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AttendanceEvent" }
+        nextCursor: { type: string, nullable: true }
+
+    MonthlyAttendanceReport:
+      type: object
+      required: [year, month, factoryId, generatedAt, rows]
+      properties:
+        year: { type: integer }
+        month: { type: integer }
+        factoryId: { type: string }
+        generatedAt: { type: string, format: date-time }
+        rows:
+          type: array
+          items:
+            type: object
+            properties:
+              employeeRef: { type: string }
+              workDate: { type: string, format: date }
+              firstIn: { type: string, format: date-time, nullable: true }
+              lastOut: { type: string, format: date-time, nullable: true }
+              status: { type: string }
+              exceptionFlags:
+                type: array
+                items: { type: string }
+
+    AdjustmentRequest:
+      type: object
+      required: [employeeRef, workDate, reason, after]
+      properties:
+        employeeRef: { type: string }
+        workDate: { type: string, format: date }
+        reason: { type: string, minLength: 10, maxLength: 1000 }
+        before: { type: object, additionalProperties: true }
+        after: { type: object, additionalProperties: true }
+        evidenceRef: { type: string }
+
+    Adjustment:
+      type: object
+      required: [adjustmentId, status, createdAt]
+      properties:
+        adjustmentId: { type: string }
+        status:
+          type: string
+          enum: [PROPOSED, APPROVED, REJECTED]
+        createdAt: { type: string, format: date-time }
+
+    AttendanceSnapshot:
+      type: object
+      required: [snapshotId, periodId, snapshotVersion, checksum, rowCount, createdAt]
+      properties:
+        snapshotId: { type: string }
+        periodId: { type: string }
+        snapshotVersion: { type: integer }
+        checksum: { type: string }
+        rowCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+
+    HrExportBatch:
+      type: object
+      required: [batchId, snapshotId, status, createdAt]
+      properties:
+        batchId: { type: string }
+        snapshotId: { type: string }
+        status:
+          type: string
+          enum: [PENDING, SENT, PARTIAL, ACKED, FAILED, UNKNOWN]
+        createdAt: { type: string, format: date-time }
+
+    AuditPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              auditId: { type: string }
+              occurredAt: { type: string, format: date-time }
+              actor: { type: string }
+              action: { type: string }
+              targetType: { type: string }
+              targetId: { type: string }
+              result: { type: string }
+              requestId: { type: string }
+        nextCursor: { type: string, nullable: true }
+
+    EventBatch:
+      type: object
+      required: [edgeId, schemaVersion, sentAt, events]
+      properties:
+        edgeId: { type: string }
+        schemaVersion: { type: integer, minimum: 1 }
+        sentAt: { type: string, format: date-time }
+        events:
+          type: array
+          maxItems: 500
+          items:
+            type: object
+            required: [eventId, scanId, payloadHash]
+            properties:
+              eventId: { type: string }
+              scanId: { type: string }
+              payloadHash: { type: string }
+              stationId: { type: string }
+              occurredAt: { type: string, format: date-time }
+
+    EventBatchResult:
+      type: object
+      required: [accepted, duplicates, rejected, watermark]
+      properties:
+        accepted: { type: integer }
+        duplicates: { type: integer }
+        rejected: { type: integer }
+        watermark: { type: string, format: date-time }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              eventId: { type: string }
+              result:
+                type: string
+                enum: [ACCEPTED, DUPLICATE, REJECTED]
+              errorCode: { type: string, nullable: true }
+
+    PolicySnapshot:
+      type: object
+      required: [snapshotId, policyVersion, revision, effectiveAt, expiresAt, signature]
+      properties:
+        snapshotId: { type: string }
+        policyVersion: { type: integer }
+        revision: { type: integer }
+        effectiveAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        signature: { type: string }
+        payload: { type: object, additionalProperties: true }
