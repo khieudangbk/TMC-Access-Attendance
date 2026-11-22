@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: identity-user-service
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: false
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  security:
+    oauth2:
+      authorizationserver:
+        issuer: http://identity.test
+eureka:
+  client:
+    enabled: false
+tmc:
+  identity:
+    technical-client-id: test-service
+    technical-client-secret: test-service-secret-123
+    web-redirect-uri: https://client.test/callback
