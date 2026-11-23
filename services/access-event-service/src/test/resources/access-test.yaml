@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: access-event-service
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: false
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+eureka:
+  client:
+    enabled: false
+tmc:
+  outbox:
+    enabled: false
