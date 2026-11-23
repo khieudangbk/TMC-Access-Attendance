@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: gateway-security
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:65535/unused
+
+eureka:
+  client:
+    enabled: false
