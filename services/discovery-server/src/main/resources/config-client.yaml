@@ -1,0 +1,11 @@
+# ==============================================================================
+# CONFIG CLIENT - URL VA CREDENTIAL TU .env CUA UNG DUNG
+# Nap sau .env de resolve dung thong tin ket noi Config Server.
+# ==============================================================================
+spring:
+  config:
+    import: "configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
+  cloud:
+    config:
+      username: ${CONFIG_SERVER_USERNAME:config-client}
+      password: ${CONFIG_SERVER_PASSWORD:local-config-password}

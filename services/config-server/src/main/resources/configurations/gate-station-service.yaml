@@ -1,0 +1,20 @@
+# ==============================================================================
+# GATE STATION SERVICE - NHA MAY, KIOSK VA CONG
+# Phan phoi boi Config Server; gia tri moi truong nam trong .env rieng cua service.
+# ==============================================================================
+
+# 1. Application port
+server:
+  port: ${GATE_STATION_PORT:8083}
+
+spring:
+  # 2. PostgreSQL - host, port, database, user va password tu .env
+  datasource:
+    url: ${GATE_STATION_DB_URL:jdbc:postgresql://${GATE_STATION_DB_HOST:localhost}:${GATE_STATION_DB_PORT:5432}/${GATE_STATION_DB_NAME:gate_station_db}}
+    driver-class-name: org.postgresql.Driver
+    username: ${GATE_STATION_DB_USER:${GATE_STATION_DB_USERNAME:gate_station_app}}
+    password: ${GATE_STATION_DB_PASSWORD:local-db-password}
+
+tmc:
+  events:
+    enabled: ${EVENTS_ENABLED:false}

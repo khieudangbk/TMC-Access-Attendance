@@ -1,0 +1,13 @@
+# ==============================================================================
+# GATE-STATION-SERVICE - APPLICATION BOOTSTRAP
+# Nguon cau hinh: .env rieng -> config-client.yaml -> Config Server.
+# ==============================================================================
+
+spring:
+  application:
+    name: gate-station-service
+  config:
+    import:
+      - "optional:file:./.env[.properties]"
+      - "optional:file:./services/gate-station-service/.env[.properties]"
+      - "classpath:config-client.yaml"

@@ -1,0 +1,34 @@
+# ==============================================================================
+# IDENTITY & USER SERVICE - NHAN VIEN, TAI KHOAN VA OAUTH2
+# Phan phoi boi Config Server; gia tri moi truong nam trong .env rieng cua service.
+# ==============================================================================
+
+# 1. Application port
+server:
+  port: ${IDENTITY_USER_PORT:8081}
+
+spring:
+  # 2. PostgreSQL - host, port, database, user va password tu .env
+  datasource:
+    url: ${IDENTITY_DB_URL:jdbc:postgresql://${IDENTITY_DB_HOST:localhost}:${IDENTITY_DB_PORT:5432}/${IDENTITY_DB_NAME:identity_user_db}}
+    driver-class-name: org.postgresql.Driver
+    username: ${IDENTITY_DB_USER:${IDENTITY_DB_USERNAME:identity_app}}
+    password: ${IDENTITY_DB_PASSWORD:local-db-password}
+  # 3. OAuth2 Authorization Server - issuer va client ky thuat local
+  security:
+    oauth2:
+      authorizationserver:
+        issuer: ${IDENTITY_ISSUER:http://localhost:8081}
+
+# 4. Persistent signing keys and explicit initial provisioning
+# Generate the private file once with tools/new-signing-key.ps1; keep it outside Git.
+tmc:
+  events:
+    enabled: ${EVENTS_ENABLED:false}
+  identity:
+    jwk-set-file: ${IDENTITY_JWK_SET_FILE:file:./.local/identity-jwks.json}
+    bootstrap-username: ${IDENTITY_BOOTSTRAP_USERNAME:}
+    bootstrap-password: ${IDENTITY_BOOTSTRAP_PASSWORD:}
+    technical-client-id: ${LOCAL_OAUTH_CLIENT_ID:tmc-local-client}
+    technical-client-secret: ${LOCAL_OAUTH_CLIENT_SECRET:}
+    web-redirect-uri: ${IDENTITY_WEB_REDIRECT_URI:http://localhost:3000/callback}

@@ -1,0 +1,6 @@
+ALTER TABLE command_confirmations
+    ADD COLUMN reported_outcome VARCHAR(12)
+        CHECK (reported_outcome IN ('OPENED', 'FAILED', 'UNKNOWN', 'PASSED')),
+    ADD COLUMN occurred_at TIMESTAMPTZ,
+    ADD COLUMN review_required BOOLEAN NOT NULL DEFAULT TRUE,
+    ADD COLUMN reason VARCHAR(80) NOT NULL DEFAULT 'LEGACY_CONFIRMATION_REQUIRES_REVIEW';
