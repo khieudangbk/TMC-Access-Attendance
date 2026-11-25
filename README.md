@@ -10,6 +10,18 @@
 | 4 | 2310545 | Huỳnh A Dũng |
 | 5 | 2310210 | Đặng Gia Bảo |
 
+Mục đích:
+- Mô tả tổng quan kiến trúc microservice, cách chạy, cấu hình chính và tài liệu API của workspace.
+- Áp dụng SOLID, OOP design pattern, software design & architechture
+## Tổng quan kiến trúc
+- Kiến trúc: Microservices (Tech-stack Diagram)
+- Sẵn sàng để chuyển đổi triển khai CI-CD.
+
+## Software Diagram - Software Document
+
+### UI - FIGMA
+[Link Liên kết design figma](https://www.figma.com/design/d1qxFxSrscX8m4b7nsrOCL/TMC-Access-Attendance-UI?node-id=92-0&t=MT4qUGmSLTR0GQ6B-1)
+
 ## TMC-AACS Backend
 
 Backend cho hệ thống kiểm soát ra/vào bằng QR và chấm công của TMC, tổ chức thành **7 service nghiệp vụ** và **3 ứng dụng hạ tầng Spring**.
@@ -38,6 +50,40 @@ Thư viện dùng chung nằm tại `libraries/api-support` và `libraries/event
 ## Sơ đồ kiến trúc
 
 ![Sơ đồ kiến trúc triển khai TMC-AACS](docs/image/Diagram_DEPLOYMENT.drawio.png)
+
+## Trách nhiệm các service
+
+Bảng dưới mô tả kiến trúc đầy đủ. Phạm vi MVP gồm Identity & User, QR, Gate Station, Access & Attendance Event và 3 service hạ tầng; Attendance Report, HR/Payroll Integration, Audit & Notification thuộc giai đoạn sau.
+
+| Service nghiệp vụ | Trách nhiệm | Kho dữ liệu |
+|---|---|---|
+| Identity & User Service | Quản lý nhân viên, tài khoản, đăng nhập và phân quyền RBAC | PostgreSQL |
+| QR Service | Sinh QR động có chữ ký, thời hạn sử dụng và xác thực QR | PostgreSQL |
+| Gate Station Service | Quản lý cổng, kiosk, scanner; tích hợp API điều khiển turnstile | PostgreSQL |
+| Access & Attendance Event Service | Ghi nhận sự kiện vào/ra theo kiểu append-only, chống ghi trùng | PostgreSQL |
+| Attendance Report Service | Tổng hợp công và báo cáo cho HR, giám sát, ban lãnh đạo | PostgreSQL |
+| HR/Payroll Integration Service | Xuất dữ liệu, retry và đối soát với hệ thống HR/Payroll bên ngoài | PostgreSQL |
+| Audit & Notification Service | Lưu audit log và gửi thông báo từ sự kiện nghiệp vụ | MongoDB |
+
+| Service hạ tầng | Trách nhiệm |
+|---|---|
+| API Gateway | Định tuyến yêu cầu từ client đến các service |
+| Discovery Server (Eureka) | Đăng ký và tra cứu địa chỉ các instance |
+| Config Server | Cung cấp cấu hình tập trung cho các service |
+
+## API & kiểm thử
+
+Import Postman collections:
+
+- [identity-user-service.postman_collection.json](docs/postman/identity-user-service.postman_collection.json)
+- [qr-service.postman_collection.json](docs/postman/qr-service.postman_collection.json)
+- [gate-station-service.postman_collection.json](docs/postman/gate-station-service.postman_collection.json)
+- [access-event-service.postman_collection.json](docs/postman/access-event-service.postman_collection.json)
+- [api-gateway.postman_collection.json](docs/postman/api-gateway.postman_collection.json)
+- [config-server.postman_collection.json](docs/postman/config-server.postman_collection.json)
+- [discovery-server.postman_collection.json](docs/postman/discovery-server.postman_collection.json)
+
+Điền biến URL, token và ID theo [hướng dẫn Postman](docs/postman/README.md) trước khi gửi request.
 
 ## Danh sách ứng dụng
 
@@ -74,25 +120,36 @@ backend/
 │   │   ├── local-setup.md
 │   │   ├── requirements.md
 │   │   └── solid-reflection.md
-│   └── image/
-│       └── Diagram_DEPLOYMENT.drawio.png
+│   ├── image/
+│   │   └── Diagram_DEPLOYMENT.drawio.png
+│   └── postman/
+│       ├── access-event-service.postman_collection.json
+│       ├── api-gateway.postman_collection.json
+│       ├── config-server.postman_collection.json
+│       ├── discovery-server.postman_collection.json
+│       ├── gate-station-service.postman_collection.json
+│       ├── identity-user-service.postman_collection.json
+│       ├── qr-service.postman_collection.json
+│       └── README.md
+├── libraries/
+│   ├── api-support/
+│   └── event-support/
 ├── services/
-│   ├── config-server/
-│   │   └── src/main/resources/
-│   │       ├── application.yaml
-│   │       └── configurations/      # YAML chung và YAML theo tên ứng dụng
-│   ├── discovery-server/
-│   ├── api-gateway/
-│   ├── identity-user-service/
-│   ├── qr-service/
-│   ├── gate-station-service/
 │   ├── access-event-service/
-│   ├── attendance-report-service/
-│   ├── hr-integration-service/
-│   └── audit-notification-service/
-├── infra/
-│   ├── postgres/init-databases.sh
-│   └── mongodb/init-audit.js
+│   ├── api-gateway/
+│   ├── config-server/
+│   ├── discovery-server/
+│   ├── gate-station-service/
+│   ├── identity-user-service/
+│   └── qr-service/
+└── infra/
+    ├── mongodb/
+    │   ├── audit-role.js
+    │   └── init-audit.js
+    ├── postgres/
+    │   └── init-databases.sh
+    └── sql/
+        └── outbox-status.sql
 ```
 
 ### Package Java trong mỗi service
