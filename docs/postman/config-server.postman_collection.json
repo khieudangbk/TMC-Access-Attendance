@@ -1,0 +1,216 @@
+{
+  "info": {
+    "_postman_id": "68d21c18-9f16-5607-a511-031398632617",
+    "name": "tmc_config_server",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Request mẫu theo controller hiện tại. Điền URL, ID và token tương ứng trước khi gửi; không lưu credential thật vào Git."
+  },
+  "item": [
+    {
+      "name": "Infrastructure",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseURL}}/actuator/health",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Read service configuration",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{basicUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{basicPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}/{{application}}/{{profile}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "{{application}}",
+                "{{profile}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseURL",
+      "value": "http://localhost:8888",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "employeeToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "deviceToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "serviceToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "factoryId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "stationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "employeeId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "commandId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "confirmationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "decisionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "scanId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "qrToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "deviceClientId",
+      "value": "kiosk-demo",
+      "type": "string"
+    },
+    {
+      "key": "serviceClientId",
+      "value": "service-demo",
+      "type": "string"
+    },
+    {
+      "key": "clientSecret",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "employeePassword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "expectedRevision",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "occurredAt",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "clientId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "scope",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "authorizationCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "codeVerifier",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "redirectUri",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "basicUsername",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "basicPassword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "application",
+      "value": "identity-user-service",
+      "type": "string"
+    },
+    {
+      "key": "profile",
+      "value": "default",
+      "type": "string"
+    }
+  ]
+}
